@@ -6,10 +6,10 @@ export const sendMessage = async (req, res) => {
 	try {
 		const { message } = req.body;
 		const { id: receiverId } = req.params;
-		const senderId = req.user._id;
+		const senderId = req.user._id;  // coming from potectRoute Function!!
 
 		let conversation = await Conversation.findOne({
-			participants: { $all: [senderId, receiverId] },
+			participants: { $all: [senderId, receiverId] }, // mongoose syntax
 		});
 
 		if (!conversation) {
@@ -19,7 +19,7 @@ export const sendMessage = async (req, res) => {
 		}
 
 		const newMessage = new Message({
-			senderId,
+			senderId, // same as senderId: senderId,
 			receiverId,
 			message,
 		});
@@ -31,17 +31,17 @@ export const sendMessage = async (req, res) => {
 		// await conversation.save();
 		// await newMessage.save();
 
-		// this will run in parallel
+		// this will run in parallel---->optimization!!!
 		await Promise.all([conversation.save(), newMessage.save()]);
 
-		// SOCKET IO FUNCTIONALITY WILL GO HERE
+		// SOCKET IO FUNCTIONALITY WILL GO HERE--> to make real-time
 		const receiverSocketId = getReceiverSocketId(receiverId);
 		if (receiverSocketId) {
 			// io.to(<socket_id>).emit() used to send events to specific client
 			io.to(receiverSocketId).emit("newMessage", newMessage);
 		}
 
-		res.status(201).json(newMessage);
+		res.status(201).json(newMessage); // send the message as response 
 	} catch (error) {
 		console.log("Error in sendMessage controller: ", error.message);
 		res.status(500).json({ error: "Internal server error" });
@@ -51,7 +51,7 @@ export const sendMessage = async (req, res) => {
 export const getMessages = async (req, res) => {
 	try {
 		const { id: userToChatId } = req.params;
-		const senderId = req.user._id;
+		const senderId = req.user._id; // coming from potectRoute Function!!
 
 		const conversation = await Conversation.findOne({
 			participants: { $all: [senderId, userToChatId] },
